@@ -978,11 +978,20 @@ func  (this *HyperliquidCore) HandleTrades(client interface{}, message interface
     //     }
     //
     var entry interface{} = this.SafeList(message, "data", []interface{}{})
+    if !ccxt.IsTrue(ccxt.IsGreaterThan(ccxt.GetArrayLength(entry), 0)) {
+        return
+    }
     var first interface{} = this.SafeDict(entry, 0, map[string]interface{} {})
     var coin interface{} = this.SafeString(first, "coin")
     var marketId interface{} = this.CoinToMarketId(coin)
-    var market interface{} = this.Market(marketId)
+    if ccxt.IsTrue(ccxt.IsEqual(marketId, nil)) {
+        return
+    }
+    var market interface{} = this.SafeMarket(marketId, nil)
     var symbol interface{} = ccxt.GetValue(market, "symbol")
+    if ccxt.IsTrue(ccxt.IsEqual(symbol, nil)) {
+        return
+    }
     if !ccxt.IsTrue((ccxt.InOp(this.Trades, symbol))) {
         var limit interface{} = this.SafeInteger(this.Options, "tradesLimit", 1000)
         var stored interface{} = ccxt.NewArrayCache(limit)
@@ -991,7 +1000,10 @@ func  (this *HyperliquidCore) HandleTrades(client interface{}, message interface
     var trades interface{} = ccxt.GetValue(this.Trades, symbol)
     for i := 0; ccxt.IsLessThan(i, ccxt.GetArrayLength(entry)); i++ {
         var data interface{} = this.SafeDict(entry, i)
-        var trade interface{} = this.ParseWsTrade(data)
+        if ccxt.IsTrue(ccxt.IsEqual(this.CoinToMarketId(this.SafeString(data, "coin")), nil)) {
+            continue
+        }
+        var trade interface{} = this.ParseWsTrade(data, market)
         trades.(ccxt.Appender).Append(trade)
     }
     var messageHash interface{} = ccxt.Add("trade:", symbol)
@@ -1038,7 +1050,11 @@ func  (this *HyperliquidCore) ParseWsTrade(trade interface{}, optionalArgs ...in
     var amount interface{} = this.SafeString(trade, "sz")
     var coin interface{} = this.SafeString(trade, "coin")
     var marketId interface{} = this.CoinToMarketId(coin)
-    market = this.SafeMarket(marketId, nil)
+    if ccxt.IsTrue(ccxt.IsEqual(marketId, nil)) {
+        market = this.SafeMarket(nil, market)
+    } else {
+        market = this.SafeMarket(marketId, market)
+    }
     var symbol interface{} = ccxt.GetValue(market, "symbol")
     var id interface{} = this.SafeString(trade, "tid")
     var side interface{} = this.SafeString(trade, "side")
