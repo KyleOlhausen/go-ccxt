@@ -1,5 +1,5 @@
 package ccxt
 
-var Version string = "4.5.46"
+var Version string = "4.5.52"
 
-var Exchanges []string = []string{ "binance", "bybit", "hyperliquid", "lighter" }
+var Exchanges []string = []string{ "binance", "deribit", "hyperliquid", "aster" }
